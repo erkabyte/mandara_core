@@ -1,0 +1,115 @@
+$( document ).ready(function() {
+
+  $('#alert').click(function(){
+      $('#alert').hide();
+  });
+
+    createMap();
+    });
+
+function createMap() {
+  mapboxgl.accessToken = 'pk.eyJ1Ijoic3RtbCIsImEiOiJDQ1FDcFNVIn0.C7ThVrFnQ7a7COlJe8tARw';
+
+  var map1 = new mapboxgl.Map({ container: 'map_canvas_1', style: 'mapbox://styles/mapbox/satellite-v9', center: [23.53329482846585, 37.75401466395211], zoom: 13, hash: false });
+  var map2 = new mapboxgl.Map({ container: 'map_canvas_2', style: 'mapbox://styles/mapbox/satellite-v9', center: [23.53329482846585, 37.75401466395211], zoom: 13, hash: false });
+  var map3 = new mapboxgl.Map({ container: 'map_canvas_3', style: 'mapbox://styles/mapbox/satellite-v9', center: [23.53329482846585, 37.75401466395211], zoom: 13, hash: false });
+  var map4 = new mapboxgl.Map({ container: 'map_canvas_4', style: 'mapbox://styles/mapbox/satellite-v9', center: [23.53329482846585, 37.75401466395211], zoom: 13, hash: false });
+
+// click functions
+$('#dragger').bind('dblclick', function() {
+  	zoomIn();
+	});
+$('#dragger').bind('mousewheel', function(event, delta) {
+  	if (delta > 0) { zoomIn(); }
+  	else if (delta < 0) { zoomOut(); }
+	});
+$('#dragger').bind('mousedown', function(event) {
+  	var currpositionx = event.pageX;
+  	var currpositiony = event.pageY;
+  	$('#dragger').bind('mousemove', function(event) {
+      var newpos = [(event.pageX-currpositionx),(event.pageY-currpositiony)];
+      console.log(newpos);
+  		map1.panBy(newpos, { duration: 0 });
+      // var bounds = map1.getBounds();
+      // map2.fitBounds(bounds);
+      // map3.fitBounds(bounds);
+      // map4.fitBounds(bounds);
+  		map2.panBy(newpos, { duration: 0 });
+  		map3.panBy(newpos, { duration: 0 });
+  		map4.panBy(newpos, { duration: 0 });
+  	  currpositionx = event.pageX;
+    	currpositiony = event.pageY;
+  		});
+	  });
+$('#dragger').bind('mouseup', function() {
+  	$('#dragger').unbind('mousemove');
+    var bounds = map1.getBounds();
+    map2.fitBounds(bounds, {duration: 0});
+    map3.fitBounds(bounds, {duration: 0});
+    map4.fitBounds(bounds, {duration: 0});
+	});
+
+  $('#dragger').bind('mouseout', function() {
+    	$('#dragger').unbind('mousemove');
+      var bounds = map1.getBounds();
+      map2.fitBounds(bounds, {duration: 0});
+      map3.fitBounds(bounds, {duration: 0});
+      map4.fitBounds(bounds, {duration: 0});
+  	});
+
+  // ios touch functions
+  var dragger = document.getElementById("dragger");
+  dragger.ontouchstart = function( ev1 ) {
+     ev1.preventDefault();
+     if(ev1.touches.length == 1){ // one finger
+       var touch = ev1.touches[0]; // Get the information for finger #1
+         currpositionx = touch.pageX;
+         currpositiony = touch.pageY;
+         dragger.ontouchmove = function( ev2 ) {
+           if(ev1.touches.length == 1){ // Only deal with one finger
+           var touch2 = ev2.touches[0]; // Get the information for finger #1
+           var newpos = [touch2.pageX-currpositionx,touch2.pageY-currpositiony];
+           map1.panBy(newpos, { duration: 0 });
+           map2.panBy(newpos, { duration: 0 });
+           map3.panBy(newpos, { duration: 0 });
+           map4.panBy(newpos, { duration: 0 });
+           }
+       currpositionx = touch2.pageX;
+           currpositiony = touch2.pageY;
+         }
+       }
+     else if(ev1.touches.length == 2){ // two fingers
+       dragger.ongesturechange = function( ev3 ) {
+         ev3.preventDefault();
+         if (ev3.scale > 1) {
+           dragger.ongestureend = function( ev4 ) { zoomIn(); }
+           }
+         if (ev3.scale < 1) {
+           dragger.ongestureend = function( ev4 ) { zoomOut(); }
+           }
+         }
+       }
+     }
+
+  function zoomIn() {
+  	var zoomlevel = map1.getZoom();
+  	if (zoomlevel < 22) {
+  		map1.setZoom(zoomlevel+1);
+      var bounds = map1.getBounds();
+      map2.fitBounds(bounds, {duration: 0});
+      map3.fitBounds(bounds, {duration: 0});
+      map4.fitBounds(bounds, {duration: 0});
+  		}
+  	}
+  function zoomOut() {
+  	var zoomlevel = map1.getZoom();
+  	if (zoomlevel > 0) {
+  		map1.setZoom(zoomlevel-1);
+      var bounds = map1.getBounds();
+      map2.fitBounds(bounds, {duration: 0});
+      map3.fitBounds(bounds, {duration: 0});
+      map4.fitBounds(bounds, {duration: 0});
+  		}
+  	}
+
+}

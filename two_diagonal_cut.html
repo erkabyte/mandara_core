@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Square Map with Cross-Diagonal Symmetry</title>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a202c; /* Tailwind bg-gray-900 */
+        }
+        .map-wrapper {
+            width: 80vmin; /* Square size relative to viewport */
+            height: 80vmin;
+            position: relative;
+        }
+        .map-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #map1 {
+            clip-path: polygon(50% 0, 100% 0, 50% 50%, 0 0); /* Top triangle */
+        }
+        #map2 {
+            clip-path: polygon(100% 0, 100% 0, 50% 50%, 100% 100%, 100% 0); /* Right triangle */
+        }
+        #map3 {
+            clip-path: polygon(50% 100%, 100% 100%, 50% 50%, 0 100%); /* Bottom triangle */
+        }
+        #map4 {
+            clip-path: polygon(0 0, 50% 50%, 0 100%, 0 0); /* Left triangle */
+        }
+    </style>
+</head>
+<body>
+    <div class="map-wrapper">
+        <div id="map1" class="map-container"></div>
+        <div id="map2" class="map-container"></div>
+        <div id="map3" class="map-container"></div>
+        <div id="map4" class="map-container"></div>
+    </div>
+    <script>
+        // Mapbox access token
+        mapboxgl.accessToken = 'pk.eyJ1Ijoicm9iZXJ0c21pdGhtYiIsImEiOiJjamtuc3FjNGYxZDR4M3dtZ3FqbGpudzllIn0.L_uIqdhg6sdPwfoYJEbU_w';
+
+        // Common style for all maps
+        const mapStyle = {
+            'version': 8,
+            'sources': {
+                'traffic-tiles': {
+                    'type': 'vector',
+                    'url': 'https://api.mapbox.com/v4/mapbox.mapbox-traffic-v1.json?secure&access_token=' + mapboxgl.accessToken
+                }
+            },
+            'layers': [{
+                'id': 'traffic',
+                'type': 'line',
+                'source': 'traffic-tiles',
+                'source-layer': 'traffic',
+                'paint': {
+                    'line-color': [
+                        'case',
+                        ['==', ['get', 'congestion'], 'low'], '#00ff00',
+                        ['==', ['get', 'congestion'], 'moderate'], '#ffcc00',
+                        ['==', ['get', 'congestion'], 'heavy'], '#ff0000',
+                        '#0000ff' // Default
+                    ],
+                    'line-width': 3
+                }
+            }]
+        };
+
+        // Center and zoom
+        const center = [106.917601,47.918816]; // Ulaanbaatar
+        const zoom = 12;
+
+        // Initialize four maps with transformations
+        const map1 = new mapboxgl.Map({
+            container: 'map1',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 0,
+            interactive: true
+        });
+
+        const map2 = new mapboxgl.Map({
+            container: 'map2',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: -90, // Rotate 90° for y=x reflection
+            interactive: true
+        });
+
+        const map3 = new mapboxgl.Map({
+            container: 'map3',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 180, // Rotate 180° for bottom symmetry
+            interactive: true
+        });
+
+        const map4 = new mapboxgl.Map({
+            container: 'map4',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 90, // Rotate -90° for y=-x reflection
+            interactive: true
+        });
+
+        // Synchronize map movements
+        function syncMaps(master, slaves) {
+            master.on('move', () => {
+                const center = master.getCenter();
+                const zoom = master.getZoom();
+                // slaves.forEach(slave => {
+                //     slave.jumpTo({
+                //         center: center,
+                //         zoom: zoom,
+                //         bearing: slave.getBearing() // Maintain individual bearings
+                //     });
+                // });
+                slaves.forEach(map => {
+                    map.setCenter(center);
+                    map.setZoom(zoom);
+                });
+            });
+            master.on('zoom', () => {
+                const zoom = master.getZoom();
+                maps.forEach(map => map.setZoom(zoom));
+            });
+        }
+
+        map1.on('load', () => {
+            // syncMaps(map1, [INTERN
+            syncMaps(map1, [map2, map3, map4])
+            // syncMaps(map2, [map1, map3, map4]),
+            // syncMaps(map3, [map2, map1, map4]),
+            // syncMaps(map4, [map2, map3, map1])
+        });
+        
+            // Sync maps with main map
+            // map1.on('move', () => {
+            //     const center = mainMap.getCenter();
+            //     const zoom = mainMap.getZoom();
+            //     maps.forEach(map => {
+            //         map.setCenter(center);
+            //         map.setZoom(zoom);
+            //     });
+            // });
+            // map1.on('zoom', () => {
+            //     const zoom = mainMap.getZoom();
+            //     maps.forEach(map => map.setZoom(zoom));
+            // });
+            // Sync maps with main map
+            // mainMap.on('move', () => {
+            //     const center = mainMap.getCenter();
+            //     const zoom = mainMap.getZoom();
+            //     maps.forEach(map => {
+            //         map.setCenter(center);
+            //         map.setZoom(zoom);
+            //     });
+            // });
+            // mainMap.on('zoom', () => {
+            //     const zoom = mainMap.getZoom();
+            //     maps.forEach(map => map.setZoom(zoom));
+            // });
+        // map2.on('load', () => {
+        //     syncMaps(map2, [map1, map3, map4])
+        // });
+        // map3.on('load', () => {
+        //     syncMaps(map3, [map1, map2, map4])
+        // });
+        // map4.on('load', () => {
+        //     syncMaps(map4, [map1, map3, map2])
+        // });
+    </script>
+</body>
+</html>

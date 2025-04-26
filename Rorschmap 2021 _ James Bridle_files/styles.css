@@ -1,0 +1,126 @@
+* {
+	padding: 0;
+	margin: 0;
+	}
+html {
+	height: 100%;
+	}
+body {
+	height: 100%;
+	font-family: "Gill Sans", Helvetica, Arial, sans-serif;
+	}
+
+  #alert {
+  	top: 20px;
+  	left: 20px;
+  	width: 25%;
+  	padding: 20px;
+  	border: dotted #000;
+  	background: #fff;
+  	color: #333;
+  	position: fixed;
+  	z-index: 99999999;
+  	font-size: 80%;
+  }
+  #alert p {
+    margin-bottom: 5px;
+  }
+
+  #dragger {
+  	position: fixed;
+  	overflow: hidden;
+  	top: 0;
+  	left: 0;
+  	width: 100%;
+  	height: 100%;
+  	z-index: 50;
+  	}
+
+  #container {
+  	margin: auto;
+  	position: relative;
+  	overflow: hidden;
+  	width: 100%;
+  	height: 100%;
+    z-index: 0;
+  	}
+  #topleft, #topright {
+  	width: 50%;
+  	height: 50%;
+  	z-index: 10;
+  	}
+  #bottomleft, #bottomright {
+  	width: 50%;
+  	height: 50%;
+  	z-index: 5;
+  	}
+  #topleft {
+  	top: 0;
+  	left: 0;
+  	}
+  #topright {
+  	top: 0;
+  	right: 0;
+  	}
+  #bottomleft {
+  	bottom: 0;
+  	left: 0;
+  	}
+  #bottomright {
+  	bottom: 0;
+  	right: 0;
+  	}
+  .mapwin {
+  	position: absolute;
+  	overflow: hidden;
+  	}
+  #map_canvas_1,
+  #map_canvas_2,
+  #map_canvas_3,
+  #map_canvas_4 {
+  	height: 120%;
+  	width: 100%;
+  	}
+
+  /* flip-horizontal */
+  #topright {
+      -moz-transform: scaleX(-1);
+      -webkit-transform: scaleX(-1);
+      -o-transform: scaleX(-1);
+      transform: scaleX(-1);
+      filter: fliph; /*IE*/
+  	}
+  /* flip-vertical */
+  #bottomleft  {
+      -moz-transform: scaleY(-1);
+      -webkit-transform: scaleY(-1);
+      -o-transform: scaleY(-1);
+      transform: scaleY(-1);
+      filter: flipv; /*IE*/
+  	}
+  /* flip-horizontal-vertical */
+  #bottomright  {
+  	-webkit-transform: rotate(-180deg);
+  	-moz-transform: rotate(-180deg);
+  	filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=2); /*IE*/
+  	}
+
+  #gattribution {
+  	position: fixed;
+  	bottom: 0px;
+  	font-size: 12px;
+  	right: 0px;
+  	z-index: 999999999;
+  	text-align: right;
+    padding: 5px 10px;
+    background: #ffffff88;
+  	color: #333;
+  	font-family: Helvetica, Arial, sans-serif;
+  	}
+  #gattribution a {
+  	text-decoration: none;
+    color: #333;
+  	}
+  #gattribution a:hover {
+  	text-decoration: underline;
+  	}

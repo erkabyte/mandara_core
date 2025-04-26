@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Four Quadrant Diagonal Symmetrical Traffic Map</title>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        .map-container {
+            width: 50%;
+            height: 50%;
+            position: absolute;
+        }
+        #map1 {
+            top: 0;
+            left: 0;
+            clip-path: polygon(0 0, 100% 0, 0 100%);
+        }
+        #map2 {
+            top: 0;
+            right: 0;
+            clip-path: polygon(0 0, 100% 0, 100% 100%);
+        }
+        #map3 {
+            bottom: 0;
+            left: 0;
+            clip-path: polygon(0 0, 0 100%, 100% 100%);
+        }
+        #map4 {
+            bottom: 0;
+            right: 0;
+            clip-path: polygon(100% 0, 0 100%, 100% 100%);
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <div id="map1" class="map-container"></div>
+    <div id="map2" class="map-container"></div>
+    <div id="map3" class="map-container"></div>
+    <div id="map4" class="map-container"></div>
+    <script>
+        // Mapbox access token
+        mapboxgl.accessToken = 'pk.eyJ1Ijoicm9iZXJ0c21pdGhtYiIsImEiOiJjamtuc3FjNGYxZDR4M3dtZ3FqbGpudzllIn0.L_uIqdhg6sdPwfoYJEbU_w';
+
+        // Common style for all maps
+        const mapStyle = {
+            'version': 8,
+            'sources': {
+                'traffic-tiles': {
+                    'type': 'vector',
+                    'url': 'https://api.mapbox.com/v4/mapbox.mapbox-traffic-v1.json?secure&access_token=' + mapboxgl.accessToken
+                }
+            },
+            'layers': [{
+                'id': 'traffic',
+                'type': 'line',
+                'source': 'traffic-tiles',
+                'source-layer': 'traffic',
+                'paint': {
+                    'line-color': [
+                        'case',
+                        ['==', ['get', 'congestion'], 'low'], '#00ff00',
+                        ['==', ['get', 'congestion'], 'moderate'], '#ffcc00',
+                        ['==', ['get', 'congestion'], 'heavy'], '#ff0000',
+                        '#0000ff' // Default
+                    ],
+                    'line-width': 3
+                }
+            }]
+        };
+
+        // Center and zoom
+        const center = [-0.1278, 51.5074]; // London
+        const zoom = 12;
+
+        // Initialize four maps with transformations
+        const map1 = new mapboxgl.Map({
+            container: 'map1',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 0,
+            interactive: true
+        });
+
+        const map2 = new mapboxgl.Map({
+            container: 'map2',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 90, // Rotate 90° for diagonal mirror
+            interactive: true
+        });
+
+        const map3 = new mapboxgl.Map({
+            container: 'map3',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: -90, // Rotate -90° for diagonal mirror
+            interactive: true
+        });
+
+        const map4 = new mapboxgl.Map({
+            container: 'map4',
+            style: mapStyle,
+            center: center,
+            zoom: zoom,
+            bearing: 180, // Rotate 180° for symmetry
+            interactive: true
+        });
+
+        // Synchronize map movements (optional, for consistent interaction)
+        function syncMaps(master, slaves) {
+            master.on('move', () => {
+                const center = master.getCenter();
+                const zoom = master.getZoom();
+                const bearing = master.getBearing();
+                slaves.forEach(slave => {
+                    slave.jumpTo({
+                        center: center,
+                        zoom: zoom,
+                        bearing: slave.getBearing() // Maintain individual bearings
+                    });
+                });
+            });
+        }
+
+        map1.on('load', () => {
+            syncMaps(map1, [map2, map3, map4]);
+        });
+    </script>
+</body>
+</html>

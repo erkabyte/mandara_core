@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rorschmap - 9-Square Grid with Traffic Data</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #map-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            width: 750px;
+            height: 750px;
+        }
+        .map-square {
+            width: 250px;
+            height: 250px;
+            overflow: hidden;
+        }
+        #search-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #search-bar .mapboxgl-ctrl-geocoder {
+            width: 300px;
+        }
+        .mapboxgl-ctrl-logo, .mapboxgl-ctrl-bottom-right {
+            display: none !important;
+        }
+        #map-9,#map-1,#map-7{
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container">
+        <div class="map-square" id="map-1"></div>
+        <div class="map-square" id="map-2" style="transform: scaleX(-1);"></div>
+        <div class="map-square" id="map-3" style="transform: scaleX(-1) scaleY(-1);"></div>
+        <div class="map-square" id="map-4" style="transform: rotate(-90deg);"></div>
+        <div class="map-square" id="map-5"></div>
+        <div class="map-square" id="map-6" style="transform: rotate(90deg);"></div>
+        <div class="map-square" id="map-7" style="transform: scaleX(-1) scaleY(-1);"></div>
+        <div class="map-square" id="map-8" style="transform: scaleY(-1);"></div>
+        <div class="map-square" id="map-9" style="transform: scaleX(-1);"></div>
+    </div>
+    <div id="search-bar"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoicm9iZXJ0c21pdGhtYiIsImEiOiJjamtuc3FjNGYxZDR4M3dtZ3FqbGpudzllIn0.L_uIqdhg6sdPwfoYJEbU_w';
+        let mainMap;
+        const maps = [];
+
+    //     const map = new mapboxgl.Map({
+    //     // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+    //     style: 'mapbox://styles/mapbox/light-v11',
+    //     center: [-74.0066, 40.7135],
+    //     zoom: 15.5,
+    //     pitch: 45,
+    //     bearing: -17.6,
+    //     container: 'map',
+    //     antialias: true
+    // });
+
+    // map.on('style.load', () => {
+    //     // Insert the layer beneath any symbol layer.
+    //     const layers = map.getStyle().layers;
+    //     const labelLayerId = layers.find(
+    //         (layer) => layer.type === 'symbol' && layer.layout['text-field']
+    //     ).id;
+
+    //     // The 'building' layer in the Mapbox Streets
+    //     // vector tileset contains building height data
+    //     // from OpenStreetMap.
+    //     map.addLayer(
+    //         {
+    //             'id': 'add-3d-buildings',
+    //             'source': 'composite',
+    //             'source-layer': 'building',
+    //             'filter': ['==', 'extrude', 'true'],
+    //             'type': 'fill-extrusion',
+    //             'minzoom': 15,
+    //             'paint': {
+    //                 'fill-extrusion-color': '#aaa',
+
+    //                 // Use an 'interpolate' expression to
+    //                 // add a smooth transition effect to
+    //                 // the buildings as the user zooms in.
+    //                 'fill-extrusion-height': [
+    //                     'interpolate',
+    //                     ['linear'],
+    //                     ['zoom'],
+    //                     15,
+    //                     0,
+    //                     15.05,
+    //                     ['get', 'height']
+    //                 ],
+    //                 'fill-extrusion-base': [
+    //                     'interpolate',
+    //                     ['linear'],
+    //                     ['zoom'],
+    //                     15,
+    //                     0,
+    //                     15.05,
+    //                     ['get', 'min_height']
+    //                 ],
+    //                 'fill-extrusion-opacity': 0.6
+    //             }
+    //         },
+    //         labelLayerId
+    //     );
+    // });
+
+
+
+
+        function initMap() {
+            // Initialize main map (center square, map-5)
+            mainMap = new mapboxgl.Map({
+                container: 'map-5',
+                style: 'mapbox://styles/mapbox/traffic-day-v2',
+                center: [106.917601,47.918816], // Default: Ulaanbaatar
+                zoom: 12,
+                interactive: true
+            });
+
+            // Initialize other maps
+            const mapIds = ['map-1', 'map-2', 'map-3', 'map-4', 'map-6', 'map-7', 'map-8', 'map-9'];
+            mapIds.forEach(id => {
+                const map = new mapboxgl.Map({
+                    container: id,
+                    style: 'mapbox://styles/mapbox/traffic-day-v2',
+                    center: mainMap.getCenter(),
+                    zoom: mainMap.getZoom(),
+                    interactive: false
+                });
+                if(id=='map-3'){
+                //     const map = new mapboxgl.Map({
+                //         // Choose from Mapbox's core styles, or make your own style with Mapbox Studio
+                //         style: 'mapbox://styles/mapbox/light-v11',
+                //         center: [-74.0066, 40.7135],
+                //         zoom: 15.5,
+                //         pitch: 45,
+                //         bearing: -17.6,
+                //         container: 'map',
+                //         antialias: true
+                //     });
+                //     console.log("test");
+                //     const layers = map.getStyle().layers;
+                //     const labelLayerId = layers.find(
+                //         (layer) => layer.type === 'symbol' && layer.layout['text-field']
+                //     ).id;
+                //     map.addLayer(
+                //     {
+                //         'id': 'add-3d-buildings',
+                //         'source': 'composite',
+                //         'source-layer': 'building',
+                //         'filter': ['==', 'extrude', 'true'],
+                //         'type': 'fill-extrusion',
+                //         'minzoom': 15,
+                //         'paint': {
+                //             'fill-extrusion-color': '#aaa',
+
+                //             // Use an 'interpolate' expression to
+                //             // add a smooth transition effect to
+                //             // the buildings as the user zooms in.
+                //             'fill-extrusion-height': [
+                //                 'interpolate',
+                //                 ['linear'],
+                //                 ['zoom'],
+                //                 15,
+                //                 0,
+                //                 15.05,
+                //                 ['get', 'height']
+                //             ],
+                //             'fill-extrusion-base': [
+                //                 'interpolate',
+                //                 ['linear'],
+                //                 ['zoom'],
+                //                 15,
+                //                 0,
+                //                 15.05,
+                //                 ['get', 'min_height']
+                //             ],
+                //             'fill-extrusion-opacity': 0.6
+                //         }
+                //     },
+                //     labelLayerId
+                // );
+                    
+                }
+                maps.push(map);
+            });
+
+            // Sync maps with main map
+            mainMap.on('move', () => {
+                const center = mainMap.getCenter();
+                const zoom = mainMap.getZoom();
+                maps.forEach(map => {
+                    map.setCenter(center);
+                    map.setZoom(zoom);
+                });
+            });
+            mainMap.on('zoom', () => {
+                const zoom = mainMap.getZoom();
+                maps.forEach(map => map.setZoom(zoom));
+            });
+        }
+
+        // Initialize Geocoder for search
+        function initGeocoder() {
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                placeholder: 'Enter address'
+            });
+            document.getElementById('search-bar').appendChild(geocoder.onAdd(mainMap));
+            geocoder.on('result', (e) => {
+                const coords = e.result.center;
+                mainMap.setCenter(coords);
+                mainMap.setZoom(12);
+            });
+        }
+
+        // Load map and geocoder
+        initMap();
+        initGeocoder();
+    </script>
+</body>
+</html>

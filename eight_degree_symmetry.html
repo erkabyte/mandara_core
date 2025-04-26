@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rorschmap - Mapbox with Traffic Data</title>
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v4.7.2/mapbox-gl-geocoder.css">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+        #map-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        .map-slice {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            transform-origin: center;
+        }
+        #search-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        #search-bar .mapboxgl-ctrl-geocoder {
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map-container"></div>
+    <div id="search-bar"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1Ijoicm9iZXJ0c21pdGhtYiIsImEiOiJjamtuc3FjNGYxZDR4M3dtZ3FqbGpudzllIn0.L_uIqdhg6sdPwfoYJEbU_w';
+        const slices = 8; // 8-directional symmetry
+        const angle = 360 / slices; // 45 degrees per slice
+        let mainMap;
+        const maps = [];
+
+        function initMap() {
+            // Initialize main map
+            mainMap = new mapboxgl.Map({
+                container: document.createElement('div'),
+                style: 'mapbox://styles/mapbox/traffic-day-v2',
+                center: [-0.1278, 51.5074], // Default: London
+                zoom: 12,
+                interactive: true
+            });
+
+            // Create map slices for kaleidoscope effect
+            const mapContainer = document.getElementById('map-container');
+            for (let i = 0; i < slices; i++) {
+                const slice = document.createElement('div');
+                slice.className = 'map-slice';
+                slice.style.transform = `rotate(${i * angle}deg) ${i % 2 ? 'scaleX(-1)' : ''}`; // Mirror every other slice
+                const mapDiv = document.createElement('div');
+                mapDiv.style.width = '100%';
+                mapDiv.style.height = '100%';
+                slice.appendChild(mapDiv);
+                mapContainer.appendChild(slice);
+
+                // Initialize a map for this slice
+                const sliceMap = new mapboxgl.Map({
+                    container: mapDiv,
+                    style: 'mapbox://styles/mapbox/traffic-day-v2',
+                    center: mainMap.getCenter(),
+                    zoom: mainMap.getZoom(),
+                    interactive: false // Only main map handles interactions
+                });
+                maps.push(sliceMap);
+            }
+
+            // Sync maps with main map
+            mainMap.on('move', () => {
+                const center = mainMap.getCenter();
+                const zoom = mainMap.getZoom();
+                maps.forEach(map => {
+                    map.setCenter(center);
+                    map.setZoom(zoom);
+                });
+            });
+            mainMap.on('zoom', () => {
+                const zoom = mainMap.getZoom();
+                maps.forEach(map => map.setZoom(zoom));
+            });
+        }
+
+        // Initialize Geocoder for search
+        function initGeocoder() {
+            const geocoder = new MapboxGeocoder({
+                accessToken: mapboxgl.accessToken,
+                mapboxgl: mapboxgl,
+                placeholder: 'Enter address'
+            });
+            document.getElementById('search-bar').appendChild(geocoder.onAdd(mainMap));
+            geocoder.on('result', (e) => {
+                const coords = e.result.center;
+                mainMap.setCenter(coords);
+                mainMap.setZoom(12); // Adjust zoom as needed
+            });
+        }
+
+        // Load map and geocoder
+        initMap();
+        initGeocoder();
+    </script>
+</body>
+</html>

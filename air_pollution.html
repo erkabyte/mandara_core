@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24-Hour Air Quality Circular Bar Chart</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+        }
+        #chartContainer {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .legend div {
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+            font-size: 12px;
+        }
+        .legend span {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chartContainer">
+        <h1>24-Hour PM2.5 Levels by Station (Ulaanbaatar)</h1>
+        <svg id="chart"></svg>
+        <div class="legend" id="legend"></div>
+    </div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        // Hypothetical data: 5 stations, 24 hours of PM2.5 values
+        const stations = ['Толгойт', '100 Айл', 'Баянхошуу', 'Мишээл', 'Баруун 4-н зам'];
+        const hours = Array.from({ length: 24 }, (_, i) => {
+            const date = new Date('2025-04-26T12:00:00');
+            date.setHours(date.getHours() - i);
+            return date.toISOString().slice(11, 16); // e.g., "12:00"
+        }).reverse();
+
+        // Generate sample data (replace with real Agaar.mn data)
+        const data = [];
+        stations.forEach(station => {
+            hours.forEach((hour, i) => {
+                // Random PM2.5 values between 20–60 µg/m³
+                const pm25 = 20 + Math.random() * 40;
+                data.push({ station, hour, pm25 });
+            });
+        });
+
+        // Chart dimensions
+        const width = 600;
+        const height = 600;
+        const outerRadius = Math.min(width, height) / 2 - 50;
+        const innerRadius = outerRadius - 40; // Thickness of the ring
+        const stationCount = stations.length;
+        const barHeight = (outerRadius - innerRadius) / stationCount;
+
+        // Create SVG
+        const svg = d3.select('#chart')
+            .attr('width', width)
+            .attr('height', height)
+            .append('g')
+            .attr('transform', `translate(${width / 2}, ${height / 2})`);
+
+        // Scales
+        const angleScale = d3.scaleBand()
+            .domain(hours)
+            .range([0, 2 * Math.PI])
+            .padding(0.05);
+
+        const heightScale = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d.pm25) + 10])
+            .range([0, barHeight]);
+
+        // Color scale for stations
+        const colorScale = d3.scaleOrdinal()
+            .domain(stations)
+            .range(['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']);
+
+        // Draw bars
+        const groups = svg.selectAll('.bar-group')
+            .data(hours)
+            .enter()
+            .append('g')
+            .attr('class', 'bar-group');
+
+        groups.selectAll('.bar')
+            .data(hour => data.filter(d => d.hour === hour))
+            .enter()
+            .append('path')
+            .attr('class', 'bar')
+            .attr('d', (d, i) => {
+                const startAngle = angleScale(d.hour);
+                const endAngle = startAngle + angleScale.bandwidth();
+                const r0 = innerRadius + i * barHeight;
+                const r1 = r0 + heightScale(d.pm25);
+                return d3.arc()
+                    .innerRadius(r0)
+                    .outerRadius(r1)
+                    .startAngle(startAngle)
+                    .endAngle(endAngle)();
+            })
+            .attr('fill', d => colorScale(d.station))
+            .append('title')
+            .text(d => `${d.station}: ${d.pm25.toFixed(1)} µg/m³ (${d.hour})`);
+
+        // Draw hour labels
+        svg.selectAll('.hour-label')
+            .data(hours)
+            .enter()
+            .append('text')
+            .attr('class', 'hour-label')
+            .attr('transform', d => {
+                const angle = angleScale(d) + angleScale.bandwidth() / 2;
+                const r = outerRadius + 20;
+                return `rotate(${(angle * 180 / Math.PI) - 90}) translate(${r}, 0)`;
+            })
+            .attr('text-anchor', 'middle')
+            .attr('dy', '0.35em')
+            .text(d => d)
+            .style('font-size', '10px');
+
+        // Draw legend
+        const legend = d3.select('#legend')
+            .selectAll('.legend-item')
+            .data(stations)
+            .enter()
+            .append('div')
+            .attr('class', 'legend-item')
+            .style('display', 'flex')
+            .style('align-items', 'center');
+
+        legend.append('span')
+            .style('background-color', d => colorScale(d))
+            .style('width', '12px')
+            .style('height', '12px')
+            .style('display', 'inline-block')
+            .style('margin-right', '5px');
+
+        legend.append('span')
+            .text(d => d);
+    </script>
+</body>
+</html>
